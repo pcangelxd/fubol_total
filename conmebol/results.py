@@ -8,39 +8,52 @@ from .util import (
     API_RESULTS_PREMIER_LEAGUE,
     # Importar más URLs según sea necesario
 )
+import logging
+
+# Configurar el registro
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 def get_match_statistics(_journeys: list, matches: BeautifulSoup):
-    team_names = [x.text for team in matches for x in team.find_all('span', 'SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D')]
-    goals = [x.text for team in matches for x in team.find_all('span', 'SimpleMatchCardTeam_simpleMatchCardTeam__score__UYMc_')]
-    match_dates = [x.find('time').get('datetime') for team in matches for x in team.find_all('div', 'SimpleMatchCard_simpleMatchCard__matchContent__prwTf')]
+    try:
+        team_names = [x.text for team in matches for x in team.find_all('span', 'SimpleMatchCardTeam_simpleMatchCardTeam__name__7Ud8D')]
+        goals = [x.text for team in matches for x in team.find_all('span', 'SimpleMatchCardTeam_simpleMatchCardTeam__score__UYMc_')]
+        match_dates = [x.find('time').get('datetime') for team in matches for x in team.find_all('div', 'SimpleMatchCard_simpleMatchCard__matchContent__prwTf')]
 
-    results = {}
-    date_index = 0
-    journey_index = 0
+        results = {}
+        date_index = 0
+        journey_index = 0
 
-    for i in range(0, len(team_names), 2):
-        first_team = {'country': team_names[i], 'goals': goals[i]}
-        second_team = {'country': team_names[i + 1], 'goals': goals[i + 1]}
-        winner = 'Tie' if goals[i] == goals[i + 1] else team_names[i] if goals[i] > goals[i + 1] else team_names[i + 1]
-        date = match_dates[date_index]
+        for i in range(0, len(team_names), 2):
+            if i + 1 >= len(team_names) or date_index >= len(match_dates):
+                break  # Evitar acceso fuera del rango
 
-        data = LastMatches(
-            first_team=first_team,
-            second_team=second_team,
-            winner=winner,
-            date=date
-        )
+            first_team = {'country': team_names[i], 'goals': goals[i] if i < len(goals) else '0'}
+            second_team = {'country': team_names[i + 1], 'goals': goals[i + 1] if i + 1 < len(goals) else '0'}
+            winner = 'Tie' if goals[i] == goals[i + 1] else team_names[i] if goals[i] > goals[i + 1] else team_names[i + 1]
+            date = match_dates[date_index]
 
-        if _journeys[journey_index] not in results:
-            results[_journeys[journey_index]] = []
+            data = LastMatches(
+                first_team=first_team,
+                second_team=second_team,
+                winner=winner,
+                date=date
+            )
 
-        results[_journeys[journey_index]].append(asdict(data))
-        date_index += 1
+            if _journeys[journey_index] not in results:
+                results[_journeys[journey_index]] = []
 
-        if (i + 2) % 10 == 0:
-            journey_index += 1
+            results[_journeys[journey_index]].append(asdict(data))
+            date_index += 1
 
-    return results
+            if (i + 2) % 10 == 0:
+                journey_index += 1
+
+        return results
+
+    except Exception as e:
+        logger.error(f"Error processing match statistics: {e}")
+        return {}
 
 class Results(object):
     def __init__(self) -> None:
@@ -64,13 +77,13 @@ class Results(object):
 
             return get_match_statistics(_journeys, _matches)
         except httpx.HTTPStatusError as e:
-            print(f"HTTP error occurred: {e.response.status_code}")
+            logger.error(f"HTTP error occurred: {e.response.status_code} - {e.response.text}")
             return {}
         except httpx.RequestError as e:
-            print(f"Request error occurred: {e}")
+            logger.error(f"Request error occurred: {e}")
             return {}
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            logger.error(f"An unexpected error occurred: {e}")
             return {}
 
     @property
