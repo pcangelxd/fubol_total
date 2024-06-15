@@ -1,5 +1,4 @@
 import json
-
 from flask import Flask, render_template
 from flask_cors import CORS
 from exceptions import page_not_found, internal_server_error
@@ -17,7 +16,6 @@ def render_json(_object: dict):
         status=200,
         mimetype='application/json'
     )
-
     return response
 
 @app.route('/')
