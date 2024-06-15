@@ -96,6 +96,7 @@ class Results(object):
             league_results = self.fetch_results(api_url)
             if league_results:
                 self.results.update(league_results)
+                logger.debug(f"Results fetched successfully for URL: {api_url}")
             else:
                 logger.warning(f"No results fetched for URL: {api_url}")
 
