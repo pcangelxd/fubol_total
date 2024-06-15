@@ -53,15 +53,25 @@ class Results(object):
         self.results = {}
 
     def fetch_results(self, api_url):
-        response = httpx.get(api_url, timeout=10.0)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, "html.parser")
-        section_journeys = soup.find('div', 'MatchCardsListsAppender_container__y5ame')
+        try:
+            response = httpx.get(api_url, timeout=10.0)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, "html.parser")
+            section_journeys = soup.find('div', 'MatchCardsListsAppender_container__y5ame')
 
-        _journeys = [journey.text for journey in section_journeys.find_all('div', 'SectionHeader_container__iVfZ9')]
-        _matches = section_journeys.find_all('div', 'SimpleMatchCard_simpleMatchCard__content__ZWt2p')
+            _journeys = [journey.text for journey in section_journeys.find_all('div', 'SectionHeader_container__iVfZ9')]
+            _matches = section_journeys.find_all('div', 'SimpleMatchCard_simpleMatchCard__content__ZWt2p')
 
-        return get_match_statistics(_journeys, _matches)
+            return get_match_statistics(_journeys, _matches)
+        except httpx.HTTPStatusError as e:
+            print(f"HTTP error occurred: {e.response.status_code}")
+            return {}
+        except httpx.RequestError as e:
+            print(f"Request error occurred: {e}")
+            return {}
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return {}
 
     @property
     def get_results(self):
