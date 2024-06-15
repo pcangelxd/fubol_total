@@ -1,5 +1,5 @@
 import json
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 from exceptions import page_not_found, internal_server_error
 from conmebol import Classification, Results, Matches
@@ -24,12 +24,21 @@ def index():
 
 @app.route('/api/classification')
 def classification():
-    return render_json(Classification().get_positions)
+    try:
+        return render_json(Classification().get_positions)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/results')
 def results():
-    return render_json(Results().get_results)
+    try:
+        return render_json(Results().get_results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/matches')
 def matches():
-    return render_json(Matches().get_matches)
+    try:
+        return render_json(Matches().get_matches)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
