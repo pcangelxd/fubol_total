@@ -2,7 +2,10 @@ import json
 from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 from exceptions import page_not_found, internal_server_error
-from conmebol import Classification, Results, Matches
+from conmebol import Classification, Matches
+from results_conmebol import ResultsConmebol
+from results_laliga import ResultsLaLiga
+from results_premier_league import ResultsPremierLeague
 
 app = Flask(__name__)
 CORS(app)
@@ -29,10 +32,24 @@ def classification():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/results')
-def results():
+@app.route('/api/results/conmebol')
+def results_conmebol():
     try:
-        return render_json(Results().get_results)
+        return render_json(ResultsConmebol().fetch_results())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/results/laliga')
+def results_laliga():
+    try:
+        return render_json(ResultsLaLiga().fetch_results())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/results/premier-league')
+def results_premier_league():
+    try:
+        return render_json(ResultsPremierLeague().fetch_results())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -42,3 +59,6 @@ def matches():
         return render_json(Matches().get_matches)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
