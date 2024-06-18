@@ -3,6 +3,7 @@ from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 import httpx
 from bs4 import BeautifulSoup
+from dataclasses import asdict
 import logging
 from exceptions import page_not_found, internal_server_error
 
@@ -116,7 +117,7 @@ class ImageScraper:
             response.raise_for_status()
             soup = BeautifulSoup(response.content, "html.parser")
             
-            image_elements = soup.find_all('img')
+            image_elements = soup.find_all('img', {'class': 'image-event-main border-box-main'})
             
             if not image_elements:
                 logger.warning(f"No images found for URL: {self.url}")
@@ -139,10 +140,9 @@ class ImageScraper:
             images = {}
             for index, img in enumerate(image_elements):
                 img_src = img.get('src')
-                if img_src and 'events/factor' in img_src:  # Filtrar imágenes específicas
-                    img_name = f"image_{index + 1}"
-                    images[img_name] = img_src
-                    logger.debug(f"Found image: {img_name} -> {img_src}")
+                img_name = f"image_{index + 1}"
+                images[img_name] = img_src
+                logger.debug(f"Found image: {img_name} -> {img_src}")
 
             return images
         except Exception as e:
