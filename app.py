@@ -1,4 +1,5 @@
 import json
+import time
 from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 import httpx
@@ -50,6 +51,7 @@ class Results:
             section_journeys = soup.find('div', 'MatchCardsListsAppender_container__y5ame')
 
             if not section_journeys:
+                logger.warning(f"No journeys found for URL: {self.api_url}")
                 return {}
 
             _journeys = [journey.text for journey in section_journeys.find_all('div', 'SectionHeader_container__iVfZ9')]
@@ -58,11 +60,14 @@ class Results:
             self.results = self.get_match_statistics(_journeys, _matches)
             return self.results
         except httpx.HTTPStatusError as e:
-            return {"error": f"HTTP error occurred: {e.response.status_code} - {e.response.text}"}
+            logger.error(f"HTTP error occurred: {e.response.status_code} - {e.response.text}")
+            return {}
         except httpx.RequestError as e:
-            return {"error": f"Request error occurred: {e}"}
+            logger.error(f"Request error occurred: {e}")
+            return {}
         except Exception as e:
-            return {"error": f"An unexpected error occurred: {e}"}
+            logger.error(f"An unexpected error occurred: {e}")
+            return {}
 
     def get_match_statistics(self, _journeys: list, matches: BeautifulSoup):
         try:
@@ -102,7 +107,8 @@ class Results:
             return results
 
         except Exception as e:
-            return {"error": f"Error processing match statistics: {e}"}
+            logger.error(f"Error processing match statistics: {e}")
+            return {}
 
 class ImageScraper:
     def __init__(self, url):
@@ -114,8 +120,11 @@ class ImageScraper:
             logger.debug(f"Fetching images from: {self.url}")
             response = httpx.get(self.url, timeout=10.0)
             response.raise_for_status()
-            soup = BeautifulSoup(response.content, "html.parser")
             
+            # Pausar la ejecución por 5 segundos para permitir que la página cargue completamente
+            time.sleep(5)
+
+            soup = BeautifulSoup(response.content, "html.parser")
             image_elements = soup.find_all('img')
             
             if not image_elements:
@@ -185,6 +194,7 @@ def fetch_images():
         images = scraper.fetch_images()
         return render_json(images)
     except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
