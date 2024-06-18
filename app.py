@@ -57,7 +57,7 @@ class ImageScraper:
             images = {}
             for index, img in enumerate(image_elements):
                 img_src = img.get('src')
-                if img_src and 'events/factor' in img_src:  # Ensure we're capturing specific event factor images
+                if img_src and 'events/factor' in img_src:  # Filtrar imágenes específicas
                     img_name = f"image_{index + 1}"
                     images[img_name] = img_src
                     logger.debug(f"Found image: {img_name} -> {img_src}")
