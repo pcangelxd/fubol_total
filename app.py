@@ -1,5 +1,4 @@
 import json
-import time
 from flask import Flask, render_template, jsonify
 from flask_cors import CORS
 import httpx
@@ -34,14 +33,10 @@ class ImageScraper:
             logger.debug(f"Fetching images from: {self.url}")
             response = httpx.get(self.url, timeout=10.0)
             response.raise_for_status()
-            
-            # Pausar la ejecución por 20 segundos para permitir que la página cargue completamente
-            logger.debug("Waiting for 20 seconds to let the page load completely...")
-            time.sleep(20)
 
             soup = BeautifulSoup(response.content, "html.parser")
             image_elements = soup.find_all('img', {'class': 'image-event-main border-box-main'})
-            
+
             if not image_elements:
                 logger.warning(f"No images found for URL: {self.url}")
                 return {}
@@ -79,7 +74,7 @@ def index():
 @app.route('/api/images')
 def fetch_images():
     try:
-        url = "https://lordsmobilecartograph.ru/Kingdom?K=959"
+        url = "https://lordsmobilecartograph.ru/Tutorials"
         scraper = ImageScraper(url)
         images = scraper.fetch_images()
         return render_json(images)
